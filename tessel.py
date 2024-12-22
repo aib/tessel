@@ -1,3 +1,4 @@
+from collections import defaultdict
 from itertools import pairwise
 import math
 import random
@@ -99,25 +100,40 @@ def build_3d(mesh, build_base=True):
 		center[1] + numpy.cos(-angles) * padded_radius,
 		numpy.zeros_like(angles),
 	], axis=1)
-
-	closest_frame_points = []
-	for hp in mesh.outer_hull_2d:
-		deltas = mesh.vertices[hp,0:2] - perimeter_vertices[:,0:2]
-		dists_sq = (deltas * deltas).sum(axis=1)
-		closest_frame_points.append(numpy.argmin(dists_sq))
-
 	perimeter = mesh.add_vertices(perimeter_vertices)
-	closest_frame_points = perimeter[closest_frame_points]
+	hull = mesh.outer_hull_2d
 
-	f0prev = closest_frame_points[0]
-	for (h0, f0), (h1, _) in circular(zip(mesh.outer_hull_2d, closest_frame_points)):
-		mesh.add_faces([(h0, f0, h1)])
+	deltas = mesh.vertices[hull, None, 0:2] - perimeter_vertices[None, :, 0:2]
+	dists_sq = numpy.square(deltas).sum(axis=2)
+	#closest_hull = hull[numpy.argmin(dists_sq, axis=0)]
+	closest_perimeter = perimeter[numpy.argmin(dists_sq, axis=1)]
 
-		if f0 != f0prev:
-			mesh.add_faces([(h0, f0prev, f0)])
-		f0prev = f0
+	perimeter_connections = defaultdict(lambda: [])
+	for (h0, p0), (h1, _) in circular(zip(mesh.outer_hull_2d, closest_perimeter)):
+		mesh.add_faces([(h0, p0, h1)])
+		perimeter_connections[p0].append(h0)
+		perimeter_connections[p0].append(h1)
 
-	mesh.add_faces([(h1, f0, closest_frame_points[0])])
+	# Sort perimeter connections
+	for p, hs in perimeter_connections.items():
+		deltas = mesh.vertices[p] - mesh.vertices[hs]
+		angles = numpy.atan2(deltas[:, 1], deltas[:, 0])
+		# Normalize to +/- pi around one
+		norm_angles = (((angles - angles.min()) + math.pi) % math.tau) - math.pi
+		amin, amax = norm_angles.argsort()[[0, -1]]
+		perimeter_connections[p] = (hs[amax], hs[amin])
+
+	# Make sure first point has connections
+	perimeter_rotated = perimeter
+	while len(perimeter_connections[perimeter_rotated[0]]) == 0:
+		perimeter_rotated = numpy.roll(perimeter_rotated, -1)
+
+	prev_conn = None
+	for p0, p1 in circular(perimeter_rotated):
+		cs0 = perimeter_connections[p0]
+		if len(cs0) > 0:
+			prev_conn = cs0[1]
+		mesh.add_faces([(p0, p1, prev_conn)])
 
 	# Adjust height
 	mesh.vertices[:,2] = lerp(params.lith_thickness[1], params.lith_thickness[0], mesh.vertices[:,2])
