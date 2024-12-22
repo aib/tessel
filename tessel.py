@@ -118,14 +118,14 @@ def build_3d(mesh, build_base=True):
 		perimeter_connections[p0].append(h0)
 		perimeter_connections[p0].append(h1)
 
-	# Sort perimeter connections
+	# Get CW-most/CCW-most perimeter connections
+	hull_list = list(hull)
 	for p, hs in perimeter_connections.items():
-		deltas = mesh.vertices[p] - mesh.vertices[hs]
-		angles = numpy.atan2(deltas[:, 1], deltas[:, 0])
-		# Normalize to +/- pi around one
-		norm_angles = (((angles - angles.min()) + math.pi) % math.tau) - math.pi
-		amin, amax = norm_angles.argsort()[[0, -1]]
-		perimeter_connections[p] = (hs[amax], hs[amin])
+		hull_indices = numpy.array(list(map(lambda h: hull_list.index(h), hs)))
+		# Normalize to +/- len/2 around one of the values
+		hi_compare = (hull_indices - hull_indices.min() + len(hull) // 2) % len(hull)
+		himin, himax = hi_compare.argsort()[[0, -1]]
+		perimeter_connections[p] = (hull[hull_indices[himin]], hull[hull_indices[himax]])
 
 	# Make sure first point has connections
 	perimeter_rotated = perimeter
