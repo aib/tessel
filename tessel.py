@@ -95,8 +95,8 @@ def build_3d(mesh, build_base=True):
 
 	angles = numpy.linspace(0, math.tau, params.frame_points, endpoint=False)
 	perimeter_vertices = numpy.stack([
-		center[0] + numpy.sin(angles) * padded_radius,
-		center[1] + numpy.cos(angles) * padded_radius,
+		center[0] + numpy.sin(-angles) * padded_radius,
+		center[1] + numpy.cos(-angles) * padded_radius,
 		numpy.zeros_like(angles),
 	], axis=1)
 
@@ -132,7 +132,7 @@ def build_3d(mesh, build_base=True):
 			mesh.add_faces([(b0, b1, p0), (p0, b1, p1)])
 
 		for b0, b1 in circular(base):
-			mesh.add_faces([(b0, b1, base_center)])
+			mesh.add_faces([(b1, b0, base_center)])
 
 if __name__ == '__main__':
 	main()
