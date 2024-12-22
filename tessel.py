@@ -11,8 +11,8 @@ import scipy
 from mesh import *
 
 class Parameters:
-	mesh_size = (32, 32)
-	lith_thickness = (0.24, 4.8)
+	mesh_size = (128, 128)
+	lith_thickness = (0.20, 4.8)
 	frame_points = 128
 	frame_padding = 1.0
 params = Parameters()
@@ -70,7 +70,7 @@ def main():
 	mesh.faces = mesh.faces[good_faces]
 
 	build_3d(mesh)
-	with open("/tmp/out.obj", 'w') as f:
+	with open(f"/tmp/tess_{params.mesh_size[0]}x{params.mesh_size[1]}.obj", 'w') as f:
 		mesh.save_obj(f)
 
 	image_size = numpy.array([image_width, image_height])
