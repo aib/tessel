@@ -33,7 +33,7 @@ def circular(iterable):
 def load_image(filename):
 	with PIL.Image.open(filename) as im:
 		im = im.convert('L')
-		imarr = numpy.asarray(im).swapaxes(0, 1)
+		imarr = numpy.asarray(im)[::-1].swapaxes(0, 1)
 		imarr = imarr / 255.0
 
 	width = imarr.shape[0]
@@ -73,9 +73,13 @@ def main():
 	with open("/tmp/out.obj", 'w') as f:
 		mesh.save_obj(f)
 
-	svg_border = numpy.array([image_width, image_height]) * .1
-	with cairo.SVGSurface("/tmp/tess/ex13.svg", image_width + svg_border[0], image_height + svg_border[1]) as surface:
+	image_size = numpy.array([image_width, image_height])
+	svg_border = image_size * 0.1
+	surface_size = image_size + svg_border
+	with cairo.SVGSurface("/tmp/tess/ex13.svg", surface_size[0], surface_size[1]) as surface:
 		ctx = cairo.Context(surface)
+		ctx.translate(0, surface_size[1])
+		ctx.scale(1.0, -1.0)
 
 		ctx.translate(svg_border[0] / 2, svg_border[1] / 2)
 		ctx.scale(image_width / params.mesh_size[0], image_height / params.mesh_size[1])
