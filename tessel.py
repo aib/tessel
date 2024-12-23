@@ -20,15 +20,15 @@ params = Parameters()
 def lerp(a, b, t):
 	return (1.0 - t) * a + t * b
 
-def iter_circle(iterable):
+def circular(iterable):
 	iterator = iter(iterable)
 	first = next(iterator)
 	yield first
 	yield from iterator
 	yield first
 
-def circular(iterable):
-	return pairwise(iter_circle(iterable))
+def circular_pair(iterable):
+	return pairwise(circular(iterable))
 
 def load_image(filename):
 	with PIL.Image.open(filename) as im:
@@ -113,7 +113,7 @@ def build_3d(mesh, build_base=True):
 	closest_perimeter = perimeter[numpy.argmin(dists_sq, axis=1)]
 
 	perimeter_connections = defaultdict(lambda: [])
-	for (h0, p0), (h1, _) in circular(zip(mesh.outer_hull_2d, closest_perimeter)):
+	for (h0, p0), (h1, _) in circular_pair(zip(mesh.outer_hull_2d, closest_perimeter)):
 		mesh.add_faces([(h0, p0, h1)])
 		perimeter_connections[p0].append(h0)
 		perimeter_connections[p0].append(h1)
@@ -133,7 +133,7 @@ def build_3d(mesh, build_base=True):
 		perimeter_rotated = numpy.roll(perimeter_rotated, -1)
 
 	prev_conn = None
-	for p0, p1 in circular(perimeter_rotated):
+	for p0, p1 in circular_pair(perimeter_rotated):
 		cs0 = perimeter_connections[p0]
 		if len(cs0) > 0:
 			prev_conn = cs0[1]
@@ -148,10 +148,10 @@ def build_3d(mesh, build_base=True):
 		base = mesh.add_vertices(base_vertices)
 		base_center = mesh.add_vertices([(params.mesh_size[0] / 2, params.mesh_size[1] / 2, 0)])[0]
 
-		for (b0, p0), (b1, p1) in circular(zip(base, perimeter)):
+		for (b0, p0), (b1, p1) in circular_pair(zip(base, perimeter)):
 			mesh.add_faces([(b0, b1, p0), (p0, b1, p1)])
 
-		for b0, b1 in circular(base):
+		for b0, b1 in circular_pair(base):
 			mesh.add_faces([(b1, b0, base_center)])
 
 if __name__ == '__main__':
